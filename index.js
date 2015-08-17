@@ -105,6 +105,15 @@ function PostmarkBunyan(options) {
     this.onSuccess = options.onSuccess;
   }
 
+  // Validate onError
+  if (_.isUndefined(options.onError) || _.isNull(options.onError)) {
+    this.onError = null;
+  } else if (!_.isFunction(options.onError)) {
+    throw new TypeError('if provided, onError must be a function')
+  } else {
+    this.onError = options.onError;
+  }
+
   this.__client = new postmark.Client(this.key);
 
   /**
@@ -138,8 +147,14 @@ PostmarkBunyan.prototype.write = function (record) {
 
   this.__client.sendEmail(this.__generateMessage(record), function (error, result) {
     if (error) {
-      console.error("Unable to send via postmark: " + error.status + ' message ' + error.message);
-      return;
+
+      if (_.isFunction(self.onError)) {
+        self.onError(error);
+        return;
+      } else {
+        console.error("Unable to send via postmark: " + error.status + ' message ' + error.message);
+        return;
+      }
     }
 
     if (_.isFunction(self.onSuccess)) {
