@@ -10,7 +10,7 @@ npm install postmark-bunyan
 Example:
 
 ```javascript
-var bunyan = require('bunyan);
+var bunyan = require('bunyan');
 var PostmarkBunyan = require('postmark-bunyan');
 
 var logger = bunyan.createLogger({
