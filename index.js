@@ -105,12 +105,6 @@ function PostmarkBunyan(options) {
     this.onSuccess = options.onSuccess;
   }
 
-  this.__onSuccess = function(result){
-    if (_.isFunction(options.onSuccess)) {
-      options.onSuccess(result);
-    }
-  };
-
   this.__client = new postmark.Client(this.key);
 
   /**
@@ -148,7 +142,9 @@ PostmarkBunyan.prototype.write = function (record) {
       return;
     }
 
-    self.__onSuccess(result);
+    if (_.isFunction(self.onSuccess)) {
+      self.onSuccess(result);
+    }
   });
 };
 
