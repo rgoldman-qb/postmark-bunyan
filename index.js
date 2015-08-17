@@ -1,20 +1,57 @@
 var postmark = require('postmark');
+var _        = require('lodash');
 
+var LEVELS = {
+  10: 'TRACE',
+  20: 'DEBUG',
+  30: 'INFO',
+  40: 'WARN',
+  50: 'ERROR',
+  60: 'FATAL'
+};
 
 var defaultBodyFormatter    = function (record) {
-  console.log(record);
-};
-var defaultSubjectFormatter = function (record) {
-  console.log(record);
-};
+  var rows = [];
+  rows.push('level:     ' + LEVELS[record.level]);
+  rows.push('name:      ' + record.name);
+  rows.push('hostname:  ' + record.hostname);
+  rows.push('pid:       ' + record.pid);
+  rows.push('time:      ' + record.time);
 
-function PostmarkBunyan(options) {
-  if (!_.isString(options.serverKey)) {
-    throw new TypeError('serverKey must be a string');
-  } else {
-    this.key = options.serverKey;
+  if (record.msg) {
+    rows.push('msg:       ' + record.msg);
   }
 
+  if (record.err) {
+    rows.push('err.stack: ' + record.err.stack);
+  }
+
+  return rows.join('\n');
+};
+
+var defaultSubjectFormatter = function (record) {
+  return '' + LEVELS[record.level] + ' from ' + record.name + ': ' + record.msg.substring(0,12) + ' ...'
+};
+
+/**
+ * PostmarkBunyan constructor
+ *
+ * @param {Object} options
+ * @constructor
+ */
+function PostmarkBunyan(options) {
+  if (_.isUndefined(options) || _.isNull(options) || !_.isObject(options)) {
+    throw new TypeError('options object must be provided');
+  }
+
+  // Validate serverApiToken
+  if (!_.isString(options.serverApiToken)) {
+    throw new TypeError('serverApiToken must be a string');
+  } else {
+    this.key = options.serverApiToken;
+  }
+
+  // Validate toEmail
   if (!_.isArray(options.toEmail) || !_.every(options.toEmail, _.isString)) {
     throw new TypeError('toEmail must be an array of strings (email addresses)');
   } else {
@@ -25,12 +62,14 @@ function PostmarkBunyan(options) {
     }
   }
 
-  if (!_.isArray(options.fromEmail) || !_.every(options.fromEmail, _.isString)) {
-    throw new TypeError('fromEmail must be an array of strings (email addresses)');
+  // Validate fromEmail
+  if (!_.isString(options.fromEmail)) {
+    throw new TypeError('fromEmail must be a string (single email)');
   } else {
     this.fromEmail = options.fromEmail;
   }
 
+  // Validate bodyIsHtml
   if (_.isUndefined(options.bodyIsHtml) || _.isNull(options.bodyIsHtml)) {
     this.bodyIsHtml = false;
   } else if (!_.isBoolean(options.bodyIsHtml)) {
@@ -39,6 +78,7 @@ function PostmarkBunyan(options) {
     this.bodyIsHtml = options.bodyIsHtml;
   }
 
+  // Validate bodyFormatter
   if (_.isUndefined(options.bodyFormatter) || _.isNull(options.bodyFormatter)) {
     this.bodyFormatter = defaultBodyFormatter;
   } else if (!_.isFunction(options.bodyFormatter)) {
@@ -47,6 +87,7 @@ function PostmarkBunyan(options) {
     this.bodyFormatter = options.bodyFormatter;
   }
 
+  // Validate subjectFormatter
   if (_.isUndefined(options.subjectFormatter) || _.isNull(options.subjectFormatter)) {
     this.subjectFormatter = defaultSubjectFormatter;
   } else if (!_.isFunction(options.subjectFormatter)) {
@@ -55,28 +96,59 @@ function PostmarkBunyan(options) {
     this.subjectFormatter = options.subjectFormatter;
   }
 
-  this.__client = new postmark.Client(this.key);
-}
+  // Validate onSuccess
+  if (_.isUndefined(options.onSuccess) || _.isNull(options.onSuccess)) {
+    this.onSuccess = null;
+  } else if (!_.isFunction(options.onSuccess)) {
+    throw new TypeError('if provided, onSuccess must be a function')
+  } else {
+    this.onSuccess = options.onSuccess;
+  }
 
-PostmarkBunyan.prototype.write = function (record) {
-
-  var body    = this.bodyFormatter(record);
-  var subject = this.subjectFormatter(record);
-
-  var message = {
-    From:    this.fromEmail,
-    To:      this.toEmail,
-    Subject: subject
+  this.__onSuccess = function(result){
+    if (_.isFunction(options.onSuccess)) {
+      options.onSuccess(result);
+    }
   };
 
-  if (this.bodyIsHtml) { message.HtmlBody = body; }
-  else { message.TextBody = body; }
+  this.__client = new postmark.Client(this.key);
 
-  this.__client.sendEmail(message, function (error, result) {
+  /**
+   * Generate message object for postmark API
+   * @param record
+   * @private
+   */
+  this.__generateMessage = function(record){
+    var body    = this.bodyFormatter(record);
+    var subject = this.subjectFormatter(record);
+
+    var message = {
+      From:    this.fromEmail,
+      To:      this.toEmail,
+      Subject: subject
+    };
+
+    if (this.bodyIsHtml) { message.HtmlBody = body; }
+    else { message.TextBody = body; }
+
+    return message;
+  }
+}
+
+/**
+ * Write function to be called be bunyan
+ * @param record
+ */
+PostmarkBunyan.prototype.write = function (record) {
+  var self = this;
+
+  this.__client.sendEmail(this.__generateMessage(record), function (error, result) {
     if (error) {
-      console.error("Unable to send via postmark: " + error.message);
+      console.error("Unable to send via postmark: " + error.status + ' message ' + error.message);
       return;
     }
+
+    self.__onSuccess(result);
   });
 };
 
