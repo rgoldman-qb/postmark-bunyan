@@ -18,7 +18,7 @@ var logger = bunyan.createLogger({
   streams: [{
     level:  'warn',
     stream: new PostmarkBunyan({
-      serverApiToken: '<inert server api token here>',
+      serverApiToken: '<insert server api token here>',
       toEmail: ['developer@garbageemail.com'],
       fromEmail: 'noreply@garbageemail.com'
     }),
@@ -32,5 +32,13 @@ logger.warn('Something happened');
 The constructor takes the following options:
 ```javascript
 {
+  serverApiToken: String,     // Required: Server API token
+  toEmail: Array of String,   // Required: Array email addresses
+  fromEmail: String,          // Required: From email address
+  bodyIsHtml: Boolean,        // Optional: Send body as html, probably want to supply a body formatter
+  bodyFormatter: Function,    // Optional: Set your own body, receives log record argument
+  subjectFormatter: Function, // Optional: Set your own subject, receives log record argument
+  onSuccess: Function,        // Optional: Callback for successful sends, receives result
+  onError: Function           // Optional: Callback for send errors, receives error
 }
 ```
