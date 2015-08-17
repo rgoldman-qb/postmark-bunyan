@@ -1,0 +1,32 @@
+{
+  "name": "postmark-bunyan",
+  "version": "1.0.0",
+  "description": "Bunyan stream for postmark",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ehacke/postmark-bunyan.git"
+  },
+  "keywords": [
+    "bunyan",
+    "postmark"
+  ],
+  "author": "Eric Hacke",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ehacke/postmark-bunyan/issues"
+  },
+  "homepage": "https://github.com/ehacke/postmark-bunyan#readme",
+  "dependencies": {
+    "bunyan": "^1.4.0",
+    "lodash": "^3.10.1",
+    "postmark": "^1.2.1"
+  },
+  "devDependencies": {
+    "chai": "^3.2.0",
+    "nock": "^2.10.0"
+  }
+}
