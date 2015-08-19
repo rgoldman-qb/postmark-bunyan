@@ -39,6 +39,10 @@ The constructor takes the following options:
   bodyFormatter: Function,    // Optional: Set your own body, receives log record argument
   subjectFormatter: Function, // Optional: Set your own subject, receives log record argument
   onSuccess: Function,        // Optional: Callback for successful sends, receives result
-  onError: Function           // Optional: Callback for send errors, receives error
+  onError: Function,          // Optional: Callback for send errors, receives error
+  rateLimit: {                // Optional: Set a rate limit for outgoing emails
+    value: Number,               // 100 in '100 emails per hour'
+    interval: String             // 'hour' in '100 emails per hour'. Possible values: 'second', 'minute', 'hour', 'day'
+  }
 }
 ```
