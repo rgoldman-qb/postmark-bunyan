@@ -24,7 +24,7 @@
     "bunyan": "^1.4.0",
     "limiter": "^1.0.5",
     "lodash": "^3.10.1",
-    "postmark": "^1.2.1"
+    "postmark": "^2.2.4"
   },
   "devDependencies": {
     "chai": "^3.2.0",
